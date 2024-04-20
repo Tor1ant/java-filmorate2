@@ -1,0 +1,199 @@
+openapi: 3.0.3
+info:
+  title: Filmorate
+  description: Приложение для обмена мнением о фильмах
+  version: 1.0.0
+
+servers:
+  - url: /filmorate
+
+paths:
+  /films:
+    get:
+      operationId: getFilms
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Film'
+    post:
+      operationId: createFilm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Film'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Film'
+    put:
+      operationId: updateFilm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Film'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Film'
+        '405':
+          description: Invalid input
+
+  /films/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      operationId: getFilmById
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Film'
+        '404':
+          description: Not found
+        '405':
+          description: Invalid input
+
+  /users:
+    get:
+      operationId: getUsers
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '405':
+          description: Invalid input
+    put:
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '405':
+          description: Invalid input
+
+  /users/{id}:
+    get:
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '405':
+          description: Invalid input
+
+
+components:
+  schemas:
+    Film:
+      type: object
+      required:
+        - name
+        - description
+        - releaseDate
+        - duration
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          nullable: false
+          pattern: ^(?!\s*$).+
+        description:
+          type: string
+          maxLength: 200
+        releaseDate:
+          type: string
+          format: date
+          description: "Дата релиза не раньше 28.12.1895"
+        duration:
+          type: integer
+          format: int64
+          minimum: 1
+
+    User:
+      type: object
+      required:
+        - email
+        - login
+        - birthday
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          nullable: false
+          pattern: ^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$
+        login:
+          type: string
+          pattern: ^(?!\s).{2,}$
+        name:
+          type: string
+          default: null
+          description: Если имя = null, то используем в качестве него логин
+        birthday:
+          type: string
+          format: date
+          description: Дата рождения не может быть в будущем

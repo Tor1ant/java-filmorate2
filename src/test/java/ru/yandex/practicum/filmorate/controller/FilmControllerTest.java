@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import java.time.LocalDate;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -71,6 +72,58 @@ class FilmControllerTest {
     @DisplayName("Проверка создания фильма с пустым названием")
     void createFilmWithEmptyName() throws Exception {
         film.setName(null);
+        mockMvc.perform(post("/films")
+                        .content(objectMapper.writeValueAsString(film))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания фильма с пустым описанием")
+    void createFilmWithEmptyDescription() throws Exception {
+        film.setDescription(null);
+        mockMvc.perform(post("/films")
+                        .content(objectMapper.writeValueAsString(film))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания фильма с слишком длинным описанием")
+    void createFilmWithTooLongDescription() throws Exception {
+        String badDescription = RandomStringUtils.randomAlphabetic(251);
+        film.setDescription(badDescription);
+        mockMvc.perform(post("/films")
+                        .content(objectMapper.writeValueAsString(film))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания фильма в будущем")
+    void createFilmWithFutureReleaseDate() {
+        film.setReleaseDate(LocalDate.now().plusDays(1));
+        Assertions.assertThatThrownBy(() -> mockMvc.perform(post("/films")
+                                .content(objectMapper.writeValueAsString(film))
+                                .contentType("application/json"))
+                        .andExpect(status().is5xxServerError()))
+                .isInstanceOf(ServletException.class);
+    }
+
+    @Test
+    @DisplayName("Проверка создания фильма с отрицательной длительностью")
+    void createFilmWithNegativeDuration() throws Exception {
+        film.setDuration(-1L);
+        mockMvc.perform(post("/films")
+                        .content(objectMapper.writeValueAsString(film))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания фильма с нулевой длительностью")
+    void createFilmWithZeroDuration() throws Exception {
+        film.setDuration(0L);
         mockMvc.perform(post("/films")
                         .content(objectMapper.writeValueAsString(film))
                         .contentType("application/json"))

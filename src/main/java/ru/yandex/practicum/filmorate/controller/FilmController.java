@@ -63,5 +63,9 @@ public class FilmController implements FilmsApi {
             log.error("Дата релиза фильма не может быть раньше 1895-12-28. Дата релиза: {}", filmDTO.getReleaseDate());
             throw new ValidationException("Дата релиза фильма не может быть раньше 1895-12-28");
         }
+        if (filmDTO.getReleaseDate().isAfter(LocalDate.now())) {
+            log.error("Дата релиза фильма не может быть в будущем. Дата релиза: {}", filmDTO.getReleaseDate());
+            throw new ValidationException("Дата релиза фильма не может быть в будущем");
+        }
     }
 }

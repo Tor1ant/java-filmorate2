@@ -56,8 +56,38 @@ class UserControllerTest {
 
     @Test
     @DisplayName("Проверка создания пользователя с пустым логином")
-    void createUserWithEmptyLogin() throws Exception {
+    void createUserWithEmptyNullLogin() throws Exception {
         user.setLogin(null);
+        mockMvc.perform(post("/users")
+                        .content(objectMapper.writeValueAsString(user))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания пользователя с логином, содержащим пробелы")
+    void createUserWithLoginWithSpaces() throws Exception {
+        user.setLogin("login with spaces");
+        mockMvc.perform(post("/users")
+                        .content(objectMapper.writeValueAsString(user))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания пользователя с пустым логином")
+    void createUserWithEmptyLogin() throws Exception {
+        user.setLogin("");
+        mockMvc.perform(post("/users")
+                        .content(objectMapper.writeValueAsString(user))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания пользователя с логином только из пробелов")
+    void createUserWithLoginOnlySpaces() throws Exception {
+        user.setLogin("  ");
         mockMvc.perform(post("/users")
                         .content(objectMapper.writeValueAsString(user))
                         .contentType("application/json"))
@@ -68,6 +98,16 @@ class UserControllerTest {
     @DisplayName("Проверка создания пользователя с пустым email")
     void createUserWithEmptyEmail() throws Exception {
         user.setEmail(null);
+        mockMvc.perform(post("/users")
+                        .content(objectMapper.writeValueAsString(user))
+                        .contentType("application/json"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Проверка создания пользователя с некорректным email")
+    void createUserWithIncorrectEmail() throws Exception {
+        user.setEmail("testmail");
         mockMvc.perform(post("/users")
                         .content(objectMapper.writeValueAsString(user))
                         .contentType("application/json"))
@@ -89,7 +129,7 @@ class UserControllerTest {
     void updateUser() throws Exception {
         User updatedUser = User.builder()
                 .id(1L)
-                .login("new login")
+                .login("newLogin")
                 .name("new name")
                 .email("test@mail.ru")
                 .birthday(LocalDate.of(2000, 1, 1))

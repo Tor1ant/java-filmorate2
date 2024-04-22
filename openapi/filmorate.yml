@@ -188,7 +188,7 @@ components:
           pattern: ^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$
         login:
           type: string
-          pattern: ^(?!\s).{2,}$
+          pattern: ^[^\s]*\S[^\s]*$
         name:
           type: string
           default: null

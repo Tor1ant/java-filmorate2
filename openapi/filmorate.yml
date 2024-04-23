@@ -20,6 +20,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Film'
+        '500':
+          description: На любое исключение на сервере
     post:
       operationId: createFilm
       requestBody:
@@ -35,6 +37,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Film'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
     put:
       operationId: updateFilm
       requestBody:
@@ -52,6 +60,12 @@ paths:
                 $ref: '#/components/schemas/Film'
         '405':
           description: Invalid input
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
 
   /films/{id}:
     parameters:
@@ -74,6 +88,84 @@ paths:
           description: Not found
         '405':
           description: Invalid input
+        '400':
+          description: Bad request
+        '500':
+          description: На любое исключение на сервере
+
+  /films/{id}/like/{userId}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    put:
+      operationId: addLike
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+    delete:
+      operationId: deleteLike
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+
+  /films/popular:
+    get:
+      operationId: getPopular
+      parameters:
+        - name: count
+          in: query
+          required: false
+          description: Если count = 0, то вернется первые 10 фильмов
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Film'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
 
   /users:
     get:
@@ -87,6 +179,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+        '500':
+          description: На любое исключение на сервере
     post:
       operationId: createUser
       requestBody:
@@ -104,6 +198,10 @@ paths:
                 $ref: '#/components/schemas/User'
         '405':
           description: Invalid input
+        '400':
+          description: Bad request
+        '500':
+          description: На любое исключение на сервере
     put:
       operationId: updateUser
       requestBody:
@@ -121,6 +219,12 @@ paths:
                 $ref: '#/components/schemas/User'
         '405':
           description: Invalid input
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
 
   /users/{id}:
     get:
@@ -139,9 +243,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-        '405':
-          description: Invalid input
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
 
+  /users/{id}/friends/{friendId}:
+    put:
+      operationId: addFriend
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: friendId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+    delete:
+      operationId: deleteFriend
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: friendId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+
+  /users/{id}/friends:
+    get:
+      operationId: getFriends
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+
+
+  /users/{id}/friends/common/{otherId}:
+    get:
+      operationId: getCommonFriends
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: otherId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
 
 components:
   schemas:
@@ -165,12 +389,18 @@ components:
           maxLength: 200
         releaseDate:
           type: string
-          format: date
           description: "Дата релиза не раньше 28.12.1895"
+          example: 1900-12-28
         duration:
           type: integer
           format: int64
           minimum: 1
+        likes:
+          type: array
+          items:
+            type: integer
+            format: int64
+            uniqueItems: true
 
     User:
       type: object
@@ -195,5 +425,11 @@ components:
           description: Если имя = null, то используем в качестве него логин
         birthday:
           type: string
-          format: date
           description: Дата рождения не может быть в будущем
+          example: 1946-08-20
+        friends:
+          type: array
+          items:
+            type: integer
+            format: int64
+            uniqueItems: true

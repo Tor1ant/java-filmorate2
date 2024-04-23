@@ -1,21 +1,29 @@
 package ru.yandex.practicum.filmorate.mapper;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
+import org.springframework.cglib.core.Local;
 import ru.yandex.practicum.filmorate.model.entity.Film;
 import ru.yandex.practicum.generated.model.dto.FilmDTO;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.WARN)
 public interface FilmMapper {
 
-    FilmDTO usersToUserDTO(Film film);
+    FilmDTO toDto(Film film);
 
-    Film filmDtoToFilm(FilmDTO filmDTO);
+    @Mapping(target = "releaseDate", expression = "java(mapReleaseDate(filmDTO))")
+    Film toEntity(FilmDTO filmDTO);
 
-    List<FilmDTO> usersToUserDTO(Collection<Film> films);
+    List<FilmDTO> toDto(Collection<Film> films);
 
     Film updateFilm(@MappingTarget Film filmForUpdate, FilmDTO filmDTO);
+
+    default LocalDate mapReleaseDate(FilmDTO filmDTO) {
+        return LocalDate.parse(filmDTO.getReleaseDate());
+    }
 }

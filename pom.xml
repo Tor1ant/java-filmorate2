@@ -19,6 +19,7 @@
         <jeckson-databind-nullable.version>0.2.6</jeckson-databind-nullable.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <org.projectlombok.version>1.18.32</org.projectlombok.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
     </properties>
     <dependencies>
         <dependency>
@@ -108,7 +109,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>

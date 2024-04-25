@@ -142,7 +142,6 @@ class FilmControllerTest {
                         .content(objectMapper.writeValueAsString(film))
                         .contentType("application/json"))
                 .andExpect(status().is4xxClientError());
-
     }
 
     @Test

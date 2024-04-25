@@ -59,7 +59,7 @@ public class FilmController implements FilmsApi {
     @Override
     public ResponseEntity<List<FilmDTO>> getPopular(Long count) {
         log.info("Запрос на получение списка популярных фильмов");
-        return ResponseEntity.ok(filmService.getTopTenByLikes(count));
+        return ResponseEntity.ok(filmService.getPopular(count));
     }
 
 

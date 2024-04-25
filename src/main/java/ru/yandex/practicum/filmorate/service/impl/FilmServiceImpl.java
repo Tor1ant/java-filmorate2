@@ -88,7 +88,7 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<FilmDTO> getTopTenByLikes(Long count) {
+    public List<FilmDTO> getPopular(Long count) {
         count = count == null ? 10 : count;
         log.info("Получение списка фильмов по количеству лайков");
         List<FilmDTO> top = getAll().stream()

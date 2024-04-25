@@ -26,6 +26,6 @@ public interface FilmService {
 
     Long deleteLike(Long userId, Long filmId);
 
-    List<FilmDTO> getTopTenByLikes(Long count);
+    List<FilmDTO> getPopular(Long count);
 
 }

@@ -1,3 +1,4 @@
+
 package ru.yandex.practicum.filmorate.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -7,33 +8,34 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletException;
 import java.time.LocalDate;
-import org.assertj.core.api.Assertions;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mapstruct.factory.Mappers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import ru.yandex.practicum.filmorate.mapper.UserMapper;
-import ru.yandex.practicum.filmorate.model.entity.User;
+import ru.yandex.practicum.filmorate.controller.handler.Handler;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.generated.model.dto.UserDTO;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final UserMapper userMapper = Mappers.getMapper(UserMapper.class);
+    @Mock
+    private UserService userService;
 
-    private final User user = User.builder()
+    private final UserDTO user = new UserDTO()
             .login("login")
             .name("Name name")
             .email("test@mail.ru")
-            .birthday(LocalDate.of(2000, 1, 1))
-            .build();
+            .birthday(LocalDate.of(2000, 1, 1).toString());
 
     private MockMvc mockMvc;
 
@@ -41,7 +43,8 @@ class UserControllerTest {
     void setUp() {
         objectMapper.findAndRegisterModules();
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new UserController(userMapper))
+                .standaloneSetup(new UserController(userService))
+                .setControllerAdvice(new Handler())
                 .build();
     }
 
@@ -116,29 +119,30 @@ class UserControllerTest {
 
     @Test
     @DisplayName("Проверка создания пользователя с некорректной датой рождения")
-    void createUserWithIncorrectBirthday() {
-        user.setBirthday(LocalDate.now().plusYears(2));
-        Assertions.assertThatThrownBy(() -> mockMvc.perform(post("/users")
+    void createUserWithIncorrectBirthday() throws Exception {
+        user.setBirthday(LocalDate.now().plusYears(2).toString());
+        mockMvc.perform(post("/users")
                         .content(objectMapper.writeValueAsString(user))
                         .contentType("application/json"))
-                .andExpect(status().is5xxServerError())).isInstanceOf(ServletException.class);
+                .andExpect(status().is4xxClientError());
     }
 
     @Test
     @DisplayName("Проверка обновления пользователя")
     void updateUser() throws Exception {
-        User updatedUser = User.builder()
+        UserDTO updatedUser = new UserDTO()
                 .id(1L)
                 .login("newLogin")
                 .name("new name")
                 .email("test@mail.ru")
-                .birthday(LocalDate.of(2000, 1, 1))
-                .build();
+                .birthday(LocalDate.of(2000, 1, 1).toString());
 
         mockMvc.perform(post("/users")
                         .content(objectMapper.writeValueAsString(user))
                         .contentType("application/json"))
                 .andExpect(status().is2xxSuccessful());
+
+        Mockito.when(userService.update(Mockito.any())).thenReturn(updatedUser);
 
         mockMvc.perform(put("/users")
                         .content(objectMapper.writeValueAsString(updatedUser))
@@ -150,10 +154,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Проверка получения пользователя по id")
     void getUserById() throws Exception {
-        mockMvc.perform(post("/users")
-                        .content(objectMapper.writeValueAsString(user))
-                        .contentType("application/json"))
-                .andExpect(status().is2xxSuccessful());
+        Mockito.when(userService.getById(1L)).thenReturn(user);
 
         mockMvc.perform(get("/users/1"))
                 .andExpect(status().is2xxSuccessful());
@@ -162,10 +163,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Проверка получения списка пользователей")
     void getUsers() throws Exception {
-        mockMvc.perform(post("/users")
-                        .content(objectMapper.writeValueAsString(user))
-                        .contentType("application/json"))
-                .andExpect(status().is2xxSuccessful());
+        Mockito.when(userService.getAll()).thenReturn(List.of(user));
 
         mockMvc.perform(get("/users"))
                 .andExpect(status().is2xxSuccessful());

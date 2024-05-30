@@ -12,11 +12,15 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
-import ru.yandex.practicum.filmorate.model.entity.Film;
 import ru.yandex.practicum.filmorate.model.entity.User;
+import ru.yandex.practicum.filmorate.model.entity.film.Film;
+import ru.yandex.practicum.filmorate.model.entity.film.enumerated.MPA;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.LikesStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.generated.model.dto.FilmDTO;
+import ru.yandex.practicum.generated.model.dto.MPADTO;
+import ru.yandex.practicum.generated.model.dto.MPADTO.NameEnum;
 
 @ExtendWith(MockitoExtension.class)
 class FilmServiceImplTest {
@@ -25,6 +29,8 @@ class FilmServiceImplTest {
     private FilmStorage filmStorage;
     @Mock
     private UserStorage userStorage;
+    @Mock
+    private LikesStorage likesStorage;
 
     private FilmServiceImpl filmService;
     private final FilmMapper filmMapper = Mappers.getMapper(FilmMapper.class);
@@ -33,18 +39,20 @@ class FilmServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        filmService = new FilmServiceImpl(filmStorage, userStorage, filmMapper);
+        filmService = new FilmServiceImpl(filmStorage, userStorage, likesStorage, filmMapper);
         filmDTO = new FilmDTO()
                 .id(null)
                 .name("Тестовый фильм")
                 .description("Тестовое описание")
                 .releaseDate("1895-12-28")
+                .mpa(new MPADTO().id(1L).name(NameEnum.G))
                 .duration(160L);
         filmBeforeCreate = Film.builder()
                 .id(null)
                 .name(filmDTO.getName())
                 .description(filmDTO.getDescription())
                 .releaseDate(LocalDate.parse(filmDTO.getReleaseDate()))
+                .mpa(MPA.G)
                 .duration(filmDTO.getDuration())
                 .build();
     }
@@ -72,6 +80,7 @@ class FilmServiceImplTest {
                 .name("Обновленный фильм")
                 .description("Обновленное описание")
                 .releaseDate(filmBeforeCreate.getReleaseDate().toString())
+                .mpa(new MPADTO().id(1L).name(NameEnum.G))
                 .duration(filmBeforeCreate.getDuration());
 
         Film filmForUpdate = Film.builder()
@@ -79,6 +88,7 @@ class FilmServiceImplTest {
                 .name(filmDTO.getName())
                 .description(filmDTO.getDescription())
                 .releaseDate(LocalDate.parse(filmDTO.getReleaseDate()))
+                .mpa(MPA.G)
                 .duration(filmBeforeCreate.getDuration())
                 .build();
 
@@ -134,11 +144,12 @@ class FilmServiceImplTest {
     @DisplayName("Проверка добавления лайка")
     void addLike() {
         Mockito.when(filmStorage.getById(1L)).thenReturn(filmBeforeCreate);
-        Mockito.when(userStorage.getById(1L)).then(invocationOnMock -> User.builder().build());
-
+        Mockito.when(userStorage.getById(1L)).then(invocationOnMock -> User.builder().id(1L).build());
+        Mockito.when(likesStorage.getLikes(1L)).thenReturn(List.of(1L));
         Long likesCount = filmService.addLike(1L, 1L);
 
         Assertions.assertThat(likesCount).isEqualTo(1L);
+        Mockito.verify(likesStorage).addLike(1L, 1L);
     }
 
     @Test
@@ -148,10 +159,12 @@ class FilmServiceImplTest {
 
         Mockito.when(filmStorage.getById(1L)).thenReturn(filmBeforeCreate);
         Mockito.when(userStorage.getById(1L)).then(invocationOnMock -> User.builder().build());
+        Mockito.when(likesStorage.getLikes(1L)).thenReturn(List.of());
 
         Long likesCount = filmService.deleteLike(1L, 1L);
 
         Assertions.assertThat(likesCount).isEqualTo(0L);
+        Mockito.verify(likesStorage).removeLike(1L, 1L);
     }
 
     @Test
@@ -165,12 +178,14 @@ class FilmServiceImplTest {
                 .description("Второе описание")
                 .releaseDate(LocalDate.parse("1899-12-28"))
                 .duration(100L)
+                .mpa(MPA.G)
                 .build();
         FilmDTO secondFilmDto = new FilmDTO()
                 .id(secondFilm.getId())
                 .name(secondFilm.getName())
                 .description(secondFilm.getDescription())
                 .releaseDate(secondFilm.getReleaseDate().toString())
+                .mpa(new MPADTO().id(1L).name(NameEnum.G))
                 .likes(likesForSecondFilm)
                 .duration(secondFilm.getDuration());
 
@@ -178,7 +193,7 @@ class FilmServiceImplTest {
         filmBeforeCreate.getLikes().addAll(likesForFirstFilm);
         secondFilm.getLikes().addAll(likesForSecondFilm);
 
-        Mockito.when(filmStorage.getAll()).thenReturn(List.of(filmBeforeCreate, secondFilm));
+        Mockito.when(filmStorage.getPopular(10L)).thenReturn(List.of(filmBeforeCreate, secondFilm));
 
         List<FilmDTO> result = filmService.getPopular(10L);
 

@@ -6,9 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
-import ru.yandex.practicum.filmorate.model.entity.Film;
+import ru.yandex.practicum.filmorate.model.entity.film.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.LikesStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.generated.model.dto.FilmDTO;
 
@@ -19,6 +20,7 @@ public class FilmServiceImpl implements FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final LikesStorage likesStorage;
     private final FilmMapper filmMapper;
 
     @Override
@@ -66,11 +68,28 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Long addLike(Long userId, Long filmId) {
-        isUserExist(userId);
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
-        getEntityById(filmId).getLikes().add(userId);
+        isUserExist(userId);
+        isFilmExist(filmId);
+        likesStorage.addLike(filmId, userId);
+        return (long) likesStorage.getLikes(filmId).size();
+    }
 
-        return (long) getEntityById(filmId).getLikes().size();
+
+    @Override
+    public Long deleteLike(Long userId, Long filmId) {
+        log.info("Пользователь {} удалил лайк фильму {}", userId, filmId);
+        isUserExist(userId);
+        isFilmExist(filmId);
+        likesStorage.removeLike(filmId, userId);
+        return (long) likesStorage.getLikes(filmId).size();
+    }
+
+    @Override
+    public List<FilmDTO> getPopular(Long count) {
+        count = count == null ? 10 : count;
+        log.info("Получение списка популярных фильмов в количестве {}", count);
+        return filmMapper.toDto(filmStorage.getPopular(count));
     }
 
     private void isUserExist(Long userId) {
@@ -79,27 +98,10 @@ public class FilmServiceImpl implements FilmService {
         }
     }
 
-    @Override
-    public Long deleteLike(Long userId, Long filmId) {
-        log.info("Пользователь {} удалил лайк фильму {}", userId, filmId);
-        isUserExist(userId);
-        getEntityById(filmId).getLikes().remove(userId);
-        return (long) getEntityById(filmId).getLikes().size();
-    }
-
-    @Override
-    public List<FilmDTO> getPopular(Long count) {
-        count = count == null ? 10 : count;
-        log.info("Получение списка фильмов по количеству лайков");
-        List<FilmDTO> top = getAll().stream()
-                .filter(f -> !f.getLikes().isEmpty())
-                .sorted((f1, f2) -> f2.getLikes().size() - f1.getLikes().size())
-                .limit(count)
-                .toList();
-        if (top.isEmpty()) {
-            top = getAll().stream().limit(count).toList();
+    private void isFilmExist(Long filmId) {
+        if (filmStorage.getById(filmId) == null) {
+            throw new NotFoundException("Фильм с id " + filmId + " не найден");
         }
-        return top;
     }
 
     private Film getEntityById(Long id) {

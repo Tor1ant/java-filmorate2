@@ -367,6 +367,90 @@ paths:
         '500':
           description: На любое исключение на сервере
 
+  /mpa/{id}:
+    get:
+      operationId: getMpaNameById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MPA'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+  /mpa:
+    get:
+      operationId: getAll
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MPA'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+
+  /genres/{id}:
+    get:
+      operationId: getGenreById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+  /genres:
+    get:
+      operationId: getAllGenres
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Genre'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: На любое исключение на сервере
+
 components:
   schemas:
     Film:
@@ -395,6 +479,16 @@ components:
           type: integer
           format: int64
           minimum: 1
+        mpa:
+          $ref: '#/components/schemas/MPA'
+          description: "Возрастной рейтинг фильма"
+          example: PG-13
+        genres:
+          type: array
+          items:
+           $ref: '#/components/schemas/Genre'
+          description: "Жанр фильма"
+          example: Комедия
         likes:
           type: array
           items:
@@ -402,6 +496,37 @@ components:
             format: int64
             uniqueItems: true
 
+    MPA:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          enum:
+            - "G"
+            - "PG"
+            - "PG-13"
+            - "R"
+            - "NC-17"
+    Genre:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        nameEng:
+          type: string
+          enum:
+            - "COMEDY"
+            - "DRAMA"
+            - "CARTOON"
+            - "THRILLER"
+            - "DOCUMENTARY"
+            - "ACTION"
     User:
       type: object
       required:

@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.entity.User;
+import ru.yandex.practicum.filmorate.storage.FriendStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.generated.model.dto.UserDTO;
 
@@ -21,6 +22,8 @@ class UserServiceImplTest {
 
     @Mock
     private UserStorage userStorage;
+    @Mock
+    private FriendStorage friendStorage;
 
     private final UserMapper userMapper = Mappers.getMapper(UserMapper.class);
 
@@ -63,7 +66,6 @@ class UserServiceImplTest {
                 .build();
         secondUserDto = new UserDTO()
                 .id(2L)
-                .friends(List.of(1L))
                 .login("tgfgfd")
                 .name("Алексей")
                 .email("mail@mail.ru")
@@ -77,7 +79,7 @@ class UserServiceImplTest {
                 .birthday(LocalDate.parse(secondUserDto.getBirthday()))
                 .build();
 
-        userService = new UserServiceImpl(userStorage, userMapper);
+        userService = new UserServiceImpl(userStorage, userMapper, friendStorage);
     }
 
     @Test
@@ -151,79 +153,40 @@ class UserServiceImplTest {
     @Test
     @DisplayName("Проверка добавления друга")
     void addFriend() {
-        Mockito.when(userStorage.getById(1L))
-                .thenReturn(createdUser);
-        Mockito.when(userStorage.getById(2L))
-                .thenReturn(secondUser);
+        Mockito.when(friendStorage.addFriendRequest(1L, 2L)).thenReturn(true);
 
-        userService.addFriend(1L, 2L);
+        boolean added = userService.addFriend(1L, 2L);
 
-        Assertions.assertThat(createdUser.getFriends()).contains(2L);
+        Assertions.assertThat(added).isTrue();
     }
 
     @Test
     @DisplayName("Проверка удаления друга")
     void deleteFriend() {
-        Mockito.when(userStorage.getById(1L))
-                .thenReturn(createdUser);
-        Mockito.when(userStorage.getById(2L))
-                .thenReturn(secondUser);
+        Mockito.when(friendStorage.deleteFriendRequest(1L, 2L)).thenReturn(true);
 
-        userService.addFriend(1L, 2L);
         userService.deleteFriend(1L, 2L);
 
-        Assertions.assertThat(createdUser.getFriends()).isEmpty();
+        Assertions.assertThat(friendStorage.deleteFriendRequest(1L, 2L)).isTrue();
     }
 
     @Test
     @DisplayName("Проверка получения друзей")
     void getFriends() {
-        createdUser.getFriends().add(2L);
-        secondUser.getFriends().add(1L);
-
-        Mockito.when(userStorage.getById(1L))
-                .thenReturn(createdUser);
-        Mockito.when(userStorage.getById(2L))
-                .thenReturn(secondUser);
-
-        userService.addFriend(1L, 2L);
+        Mockito.when(friendStorage.getFriends(1L)).thenReturn(List.of(createdUser));
 
         List<UserDTO> result = userService.getFriends(1L);
 
-        Assertions.assertThat(result.getFirst()).isEqualTo(secondUserDto);
+        Assertions.assertThat(result.getFirst()).isEqualTo(userDtoAfterCreate);
     }
 
     @Test
     @DisplayName("Проверка получения общих друзей")
     void getCommonFriends() {
-        User commonFriend = User.builder()
-                .id(3L)
-                .login("commonLogin")
-                .email("common@mail.ru")
-                .name("Алексей")
-                .birthday(LocalDate.parse(userDto.getBirthday()))
-                .build();
-        UserDTO commonFriendDto = new UserDTO()
-                .id(commonFriend.getId())
-                .login(commonFriend.getLogin())
-                .email(commonFriend.getEmail())
-                .name(commonFriend.getName())
-                .birthday(commonFriend.getBirthday().toString());
-
-        createdUser.getFriends().add(2L);
-        secondUser.getFriends().add(1L);
-        createdUser.getFriends().add(3L);
-        secondUser.getFriends().add(3L);
-
-        Mockito.when(userStorage.getById(1L))
-                .thenReturn(createdUser);
-        Mockito.when(userStorage.getById(2L))
-                .thenReturn(secondUser);
-        Mockito.when(userStorage.getById(3L))
-                .thenReturn(commonFriend);
+        Mockito.when(friendStorage.getCommonFriends(1L, 2L)).thenReturn(List.of(secondUser));
 
         List<UserDTO> commonFriends = userService.getCommonFriends(1L, 2L);
 
-        Assertions.assertThat(commonFriends).contains(commonFriendDto);
+        Assertions.assertThat(commonFriends).contains(secondUserDto);
     }
 }

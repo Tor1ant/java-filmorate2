@@ -18,10 +18,12 @@ public interface UserMapper {
     @Mapping(target = "birthday", expression = "java(mapBirthday(userDTO))")
     User toEntity(UserDTO userDTO);
 
+    @Mapping(target = "friends", expression = "java(getFriendsIds(user))")
     UserDTO toDto(User user);
 
     List<UserDTO> toDto(Collection<User> users);
 
+    @Mapping(ignore = true, target = "friends")
     User updateUser(@MappingTarget User user1, UserDTO user2);
 
     default String mapName(UserDTO userDTO) {
@@ -30,5 +32,9 @@ public interface UserMapper {
 
     default LocalDate mapBirthday(UserDTO userDTO) {
         return LocalDate.parse(userDTO.getBirthday());
+    }
+
+    default List<Long> getFriendsIds(User user) {
+        return user.getFriends().stream().toList();
     }
 }

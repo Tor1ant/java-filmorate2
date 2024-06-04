@@ -6,9 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
-import ru.yandex.practicum.filmorate.model.entity.Film;
+import ru.yandex.practicum.filmorate.mapper.GenreMapper;
+import ru.yandex.practicum.filmorate.model.entity.film.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.FilmGenreStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.LikesStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.generated.model.dto.FilmDTO;
 
@@ -17,15 +20,20 @@ import ru.yandex.practicum.generated.model.dto.FilmDTO;
 @RequiredArgsConstructor
 public class FilmServiceImpl implements FilmService {
 
+    private final FilmMapper filmMapper;
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
-    private final FilmMapper filmMapper;
+    private final LikesStorage likesStorage;
+    private final FilmGenreStorage filmGenreStorage;
+    private final GenreMapper genreMapper;
 
     @Override
     public FilmDTO create(FilmDTO filmDTO) {
         log.info("Создание фильма {}", filmDTO);
         Film filmToCreate = filmMapper.toEntity(filmDTO);
         Film createdFilm = filmStorage.create(filmToCreate);
+        filmGenreStorage.add(createdFilm.getId(), genreMapper.toGenreList(filmDTO.getGenres()));
+        createdFilm.setGenres(filmGenreStorage.getGenresByFilmId(createdFilm.getId()));
         log.debug("Создан фильм {}", createdFilm);
         return filmMapper.toDto(createdFilm);
     }
@@ -66,40 +74,28 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Long addLike(Long userId, Long filmId) {
-        isUserExist(userId);
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
-        getEntityById(filmId).getLikes().add(userId);
-
-        return (long) getEntityById(filmId).getLikes().size();
+        userStorage.getById(userId);
+        getEntityById(filmId);
+        likesStorage.addLike(filmId, userId);
+        return (long) likesStorage.getLikes(filmId).size();
     }
 
-    private void isUserExist(Long userId) {
-        if (userStorage.getById(userId) == null) {
-            throw new NotFoundException("Пользователь с id " + userId + " не найден");
-        }
-    }
 
     @Override
     public Long deleteLike(Long userId, Long filmId) {
         log.info("Пользователь {} удалил лайк фильму {}", userId, filmId);
-        isUserExist(userId);
-        getEntityById(filmId).getLikes().remove(userId);
-        return (long) getEntityById(filmId).getLikes().size();
+        userStorage.getById(userId);
+        getEntityById(filmId);
+        likesStorage.removeLike(filmId, userId);
+        return (long) likesStorage.getLikes(filmId).size();
     }
 
     @Override
     public List<FilmDTO> getPopular(Long count) {
         count = count == null ? 10 : count;
-        log.info("Получение списка фильмов по количеству лайков");
-        List<FilmDTO> top = getAll().stream()
-                .filter(f -> !f.getLikes().isEmpty())
-                .sorted((f1, f2) -> f2.getLikes().size() - f1.getLikes().size())
-                .limit(count)
-                .toList();
-        if (top.isEmpty()) {
-            top = getAll().stream().limit(count).toList();
-        }
-        return top;
+        log.info("Получение списка популярных фильмов в количестве {}", count);
+        return filmMapper.toDto(filmStorage.getPopular(count));
     }
 
     private Film getEntityById(Long id) {
@@ -107,6 +103,7 @@ public class FilmServiceImpl implements FilmService {
         if (entity == null) {
             throw new NotFoundException("Фильм с id " + id + " не найден");
         }
+        entity.setGenres(filmGenreStorage.getGenresByFilmId(id));
         return entity;
     }
 }

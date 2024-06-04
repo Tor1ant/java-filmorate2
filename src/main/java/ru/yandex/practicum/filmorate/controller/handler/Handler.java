@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller.handler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -41,5 +42,13 @@ public class Handler {
     public Error handleValidationExceptions(MethodArgumentNotValidException ex) {
         log.error("Выбросилось исключение 400", ex);
         return new Error(ex.getMessage(), HttpStatusCode.valueOf(400).toString());
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(EmptyResultDataAccessException.class)
+    public Error emptyResultDataAccessException(EmptyResultDataAccessException e) {
+        log.error("Объект не найден в базе данных и выбросилось 404", e);
+        String message = "Объект не найден";
+        return new Error(message, HttpStatusCode.valueOf(404).toString());
     }
 }

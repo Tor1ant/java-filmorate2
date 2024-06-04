@@ -4,7 +4,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.entity.User;
 import ru.yandex.practicum.filmorate.service.UserService;
@@ -66,6 +65,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean addFriend(Long id, Long friendId) {
         log.info("Запрос от пользователя с id={} на добавление в друзья пользователя с id={}", id, friendId);
+        checkUserExists(id);
+        checkUserExists(friendId);
         boolean isAdded = friendStorage.addFriendRequest(id, friendId);
         log.debug("Результат добавления в друзья пользователя с id={} и пользователя с id={}: {}", id, friendId,
                 isAdded);
@@ -76,6 +77,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean deleteFriend(Long id, Long friendId) {
         log.info("Запрос от пользователя с id={} на удаления друга с id={}", id, friendId);
+        checkUserExists(id);
+        checkUserExists(friendId);
         boolean isDeleted = friendStorage.deleteFriendRequest(id, friendId);
         log.debug("Друг с id={} удален={} из друзей пользователя с id={}", friendId, id, isDeleted);
         return isDeleted;
@@ -84,6 +87,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDTO> getFriends(Long id) {
         log.info("Запрос от пользователя с id={} на получение друзей", id);
+        checkUserExists(id);
         List<UserDTO> dtos = mapper.toDto(friendStorage.getFriends(id));
         log.debug("Друзья пользователя с id={} получены: {}", id, dtos);
         return dtos;
@@ -92,6 +96,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDTO> getCommonFriends(Long id, Long otherId) {
         log.info("Запрос от пользователя с id={} на получение общих друзей пользователя с id={}", id, otherId);
+        checkUserExists(id);
+        checkUserExists(otherId);
         List<UserDTO> commonFriends = mapper.toDto(friendStorage.getCommonFriends(id, otherId));
         log.info("Общие друзья пользователя с id={} и пользователя с id={} получены: {}", id, otherId, commonFriends);
         return commonFriends;
@@ -99,9 +105,14 @@ public class UserServiceImpl implements UserService {
 
     private User getEntityById(Long id) {
         User user = userStorage.getById(id);
-        if (user == null) {
-            throw new NotFoundException(String.format("пользователь с id=%s не найден", id));
-        }
+        user.getFriends().addAll(friendStorage.getFriends(id)
+                .stream()
+                .map(User::getId)
+                .toList());
         return user;
+    }
+
+    private void checkUserExists(Long id) {
+        userStorage.getById(id);
     }
 }

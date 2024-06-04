@@ -9,14 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.TestConstructor;
-import org.springframework.test.context.TestConstructor.AutowireMode;
 import ru.yandex.practicum.filmorate.model.entity.User;
 import ru.yandex.practicum.filmorate.storage.dao.UserDao;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
-@TestConstructor(autowireMode = AutowireMode.ALL)
 @DisplayName("Тестирование хранилища пользователей")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class UserStorageTest {
@@ -75,13 +72,5 @@ public class UserStorageTest {
         testUser.setId(createdUser.getId());
         List<User> users = userDao.getAll();
         Assertions.assertThat(users).contains(testUser);
-    }
-
-    @Test
-    @DisplayName("Проверка существования пользователя")
-    void userExists() {
-        User createdUser = userDao.create(testUser);
-        testUser.setId(createdUser.getId());
-        Assertions.assertThat(userDao.isExists(testUser.getId())).isTrue();
     }
 }

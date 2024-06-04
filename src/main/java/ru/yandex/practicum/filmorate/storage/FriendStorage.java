@@ -12,6 +12,4 @@ public interface FriendStorage {
     List<User> getFriends(Long id);
 
     List<User> getCommonFriends(Long id, Long friendId);
-
-    boolean hasFriends(Long id);
 }

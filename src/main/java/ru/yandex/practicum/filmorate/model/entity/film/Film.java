@@ -21,7 +21,8 @@ public class Film {
     private MPA mpa;
     @Builder.Default
     private Set<Genre> genres = new HashSet<>();
-    private final Set<Long> likes = new HashSet<>();
+    @Builder.Default
+    private Set<Long> likes = new HashSet<>();
 
     public Map<String, Object> toMap() {
         return Map.of(

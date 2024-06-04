@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,9 +13,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
+import ru.yandex.practicum.filmorate.mapper.GenreMapper;
 import ru.yandex.practicum.filmorate.model.entity.User;
 import ru.yandex.practicum.filmorate.model.entity.film.Film;
 import ru.yandex.practicum.filmorate.model.entity.film.enumerated.MPA;
+import ru.yandex.practicum.filmorate.storage.FilmGenreStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.LikesStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -31,15 +34,21 @@ class FilmServiceImplTest {
     private UserStorage userStorage;
     @Mock
     private LikesStorage likesStorage;
+    @Mock
+    private FilmGenreStorage filmGenreStorage;
 
-    private FilmServiceImpl filmService;
-    private final FilmMapper filmMapper = Mappers.getMapper(FilmMapper.class);
     private FilmDTO filmDTO;
     private Film filmBeforeCreate;
+    private FilmServiceImpl filmService;
+
+    private final FilmMapper filmMapper = Mappers.getMapper(FilmMapper.class);
+    private final GenreMapper genreMapper = Mappers.getMapper(GenreMapper.class);
 
     @BeforeEach
     void setUp() {
-        filmService = new FilmServiceImpl(filmStorage, userStorage, likesStorage, filmMapper);
+        filmService = new FilmServiceImpl(filmMapper, filmStorage, userStorage, likesStorage, filmGenreStorage,
+                genreMapper);
+
         filmDTO = new FilmDTO()
                 .id(null)
                 .name("Тестовый фильм")
@@ -66,6 +75,12 @@ class FilmServiceImplTest {
                             return filmBeforeCreate;
                         }
                 );
+        Mockito.doNothing()
+                .when(filmGenreStorage)
+                .add(Mockito.any(), Mockito.any());
+
+        Mockito.when(filmGenreStorage.getGenresByFilmId(Mockito.any()))
+                .thenReturn(Set.of());
 
         FilmDTO result = filmService.create(filmDTO);
         filmDTO.setId(1L);

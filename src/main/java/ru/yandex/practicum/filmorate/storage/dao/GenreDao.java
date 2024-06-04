@@ -20,7 +20,7 @@ public class GenreDao implements EnumStorage<Genre> {
     public Genre getEnumByEntityId(Long id) {
         log.info("Запрос на получение жанра по id {}", id);
         String sql = """
-                select name from GENRES
+                select id, name from GENRES
                 where id = (select GENRE_ID from films where id =?)
                 """;
         try {

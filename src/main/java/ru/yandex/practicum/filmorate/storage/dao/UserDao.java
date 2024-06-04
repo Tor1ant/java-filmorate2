@@ -1,16 +1,14 @@
 package ru.yandex.practicum.filmorate.storage.dao;
 
 import java.util.List;
-import java.util.Objects;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.entity.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.filmorate.storage.dao.mapper.UserRowMapper;
@@ -18,14 +16,13 @@ import ru.yandex.practicum.filmorate.storage.dao.mapper.UserRowMapper;
 @Slf4j
 @Primary
 @Repository
-@RequiredArgsConstructor(onConstructor_ = @__(@Lazy))
+@RequiredArgsConstructor
 public class UserDao implements UserStorage {
 
     @Getter
     private final String tableName = "users";
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper rowMapper;
-    private final FriendDao friendDao;
 
     @Override
     public User create(User user) {
@@ -53,10 +50,8 @@ public class UserDao implements UserStorage {
         log.info("Получение пользователя из базы данных по id: {}", id);
         String selectQuery = "SELECT * FROM " + tableName + " WHERE id = " + id;
         User user = jdbcTemplate.queryForObject(selectQuery, rowMapper);
-
-        if (friendDao.hasFriends(id)) {
-            Objects.requireNonNull(user).getFriends()
-                    .addAll(friendDao.getFriends(id).stream().map(User::getId).toList());
+        if (user == null) {
+            throw new NotFoundException("Пользователь с id=" + id + " не найден");
         }
         log.debug("Пользователь получен из базы данных: {}", user);
         return user;
@@ -79,24 +74,5 @@ public class UserDao implements UserStorage {
         List<User> users = jdbcTemplate.query(selectQuery, rowMapper);
         log.debug("Пользователи получены из базы данных: {}", users);
         return users;
-    }
-
-    @Override
-    public boolean isExists(Long id) {
-        log.info("Проверка существования пользователя в базе данных с id={}", id);
-        String sql = """
-                select 1
-                from users
-                where id = ?
-                limit 1
-                """;
-        try {
-            jdbcTemplate.queryForObject(sql, Integer.class, id);
-        } catch (EmptyResultDataAccessException e) {
-            log.debug("Пользователь с id={} не существует", id);
-            return false;
-        }
-        log.debug("Пользователь с id={} существует", id);
-        return true;
     }
 }

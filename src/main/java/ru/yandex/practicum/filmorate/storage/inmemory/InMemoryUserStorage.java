@@ -40,9 +40,4 @@ public class InMemoryUserStorage implements UserStorage {
     public List<User> getAll() {
         return users.values().stream().toList();
     }
-
-    @Override
-    public boolean isExists(Long id) {
-        return users.containsKey(id);
-    }
 }

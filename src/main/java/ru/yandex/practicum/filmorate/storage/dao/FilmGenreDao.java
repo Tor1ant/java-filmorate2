@@ -22,7 +22,7 @@ public class FilmGenreDao implements FilmGenreStorage {
     private final GenreRowMapper rowMapper;
 
     @Override
-    public void add(Long filmId, Set<Genre> genres) {
+    public void add(Long filmId, List<Genre> genres) {
         log.info("Добавление жанров для фильма filmId = {} genres = {} ", filmId, genres);
         List<Object[]> batchArgs = genres.stream()
                 .map(genre -> new Object[]{filmId, genre.getId()})

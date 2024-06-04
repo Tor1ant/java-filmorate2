@@ -52,6 +52,7 @@ values ('COMEDY'),
        ('DOCUMENTARY'),
        ('ACTION');
 
+
 create table mpa
 (
     id   LONG auto_increment,

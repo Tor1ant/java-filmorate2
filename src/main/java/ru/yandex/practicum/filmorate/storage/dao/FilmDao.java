@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -18,10 +17,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.entity.film.Film;
 import ru.yandex.practicum.filmorate.model.entity.film.enumerated.Genre;
 import ru.yandex.practicum.filmorate.model.entity.film.enumerated.MPA;
-import ru.yandex.practicum.filmorate.storage.EnumStorage;
-import ru.yandex.practicum.filmorate.storage.FilmGenreStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.LikesStorage;
 import ru.yandex.practicum.filmorate.storage.dao.mapper.FilmRowMapper;
 
 @Slf4j
@@ -33,10 +29,6 @@ public class FilmDao implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
     private final String tableName = "films";
     private final FilmRowMapper rowMapper;
-    @Qualifier("mpaDao")
-    private final EnumStorage<MPA> mpaStorage;
-    private final LikesStorage likesStorage;
-    private final FilmGenreStorage filmGenreStorage;
 
     @Override
     public Film create(Film film) {
@@ -46,7 +38,6 @@ public class FilmDao implements FilmStorage {
                 .usingGeneratedKeyColumns("id");
 
         long id = simpleJdbcInsert.executeAndReturnKey(film.toMap()).longValue();
-        filmGenreStorage.add(id, film.getGenres());
         log.debug("Фильм создан");
         return getById(id);
     }
@@ -65,15 +56,17 @@ public class FilmDao implements FilmStorage {
     @Override
     public Film getById(Long id) {
         log.info("Получение фильма из базы данных по id: {}", id);
-        String selectQuery = "SELECT * FROM " + tableName + " WHERE id = " + id;
+        String selectQuery = "SELECT f.*, " +
+                             "(SELECT mpa_id FROM films WHERE id = f.id) AS mpa_id, " +
+                             "(SELECT ARRAY_AGG(user_id) FROM likes WHERE film_id = f.id) AS likes " +
+                             "FROM films f " +
+                             "WHERE f.id = " + id;
+
         Film film = jdbcTemplate.queryForObject(selectQuery, rowMapper);
         if (film == null) {
             throw new NotFoundException("Фильм с id " + id + " не найден") {
             };
         }
-        setMpa(film);
-        setGenres(film);
-        setLikes(film);
         log.debug("фильм получен из базы данных: {}", film);
         return film;
     }
@@ -150,17 +143,5 @@ public class FilmDao implements FilmStorage {
         log.debug("Популярные фильмы получены из базы данных: {}", films);
         return films;
 
-    }
-
-    private void setMpa(Film film) {
-        film.setMpa(mpaStorage.getEnumByEntityId(film.getId()));
-    }
-
-    private void setGenres(Film film) {
-        film.setGenres(filmGenreStorage.getGenresByFilmId(film.getId()));
-    }
-
-    private void setLikes(Film film) {
-        film.getLikes().addAll(likesStorage.getLikes(film.getId()));
     }
 }

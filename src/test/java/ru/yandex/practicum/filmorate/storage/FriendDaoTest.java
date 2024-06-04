@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import java.time.LocalDate;
-import lombok.RequiredArgsConstructor;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.TestConstructor;
-import org.springframework.test.context.TestConstructor.AutowireMode;
 import ru.yandex.practicum.filmorate.model.entity.User;
 import ru.yandex.practicum.filmorate.storage.dao.FriendDao;
 import ru.yandex.practicum.filmorate.storage.dao.UserDao;
@@ -18,15 +15,13 @@ import ru.yandex.practicum.filmorate.storage.dao.UserDao;
 @SpringBootTest
 @AutoConfigureTestDatabase
 @DisplayName("Тестирование хранилища Genres")
-@TestConstructor(autowireMode = AutowireMode.ALL)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FriendDaoTest {
 
     @Autowired
-    private final FriendDao friendDao;
+    private FriendDao friendDao;
     @Autowired
-    private final UserDao userDao;
+    private UserDao userDao;
 
     private static final User testUser = User.builder()
             .email("test@mail")
@@ -70,12 +65,6 @@ public class FriendDaoTest {
         Assertions.assertThat(friendDao.getFriends(createdTestUser.getId()).size()).isEqualTo(1);
     }
 
-    @Test
-    @DisplayName("Проверка отсутствия друзей у пользователя")
-    void hasFriends() {
-        User createdTestUser = userDao.create(testUser);
-        Assertions.assertThat(friendDao.hasFriends(createdTestUser.getId())).isFalse();
-    }
 
     @Test
     @DisplayName("Проверка наличия общих друзей у пользователей")

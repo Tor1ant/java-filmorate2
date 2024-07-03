@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      author: Alikin
+      id: init_shema
+      changes:
+        - sqlFile:
+            path: sql/init_shema.sql
+            relativeToChangelogFile: true

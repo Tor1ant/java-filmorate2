@@ -1,15 +1,13 @@
 package ru.yandex.practicum.filmorate.service.impl;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.entity.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.FriendStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.generated.model.dto.UserDTO;
 
@@ -20,6 +18,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserStorage userStorage;
     private final UserMapper mapper;
+    private final FriendStorage friendStorage;
 
     @Override
     public UserDTO create(UserDTO user) {
@@ -66,52 +65,54 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean addFriend(Long id, Long friendId) {
         log.info("Запрос от пользователя с id={} на добавление в друзья пользователя с id={}", id, friendId);
-        boolean isFirstFriend = getEntityById(id).getFriends().add(friendId);
-        boolean isSecondFriend = getEntityById(friendId).getFriends().add(id);
+        checkUserExists(id);
+        checkUserExists(friendId);
+        boolean isAdded = friendStorage.addFriendRequest(id, friendId);
+        log.debug("Результат добавления в друзья пользователя с id={} и пользователя с id={}: {}", id, friendId,
+                isAdded);
+        return isAdded;
 
-        return isFirstFriend && isSecondFriend;
     }
 
     @Override
     public boolean deleteFriend(Long id, Long friendId) {
         log.info("Запрос от пользователя с id={} на удаления друга с id={}", id, friendId);
-        boolean firstRemove = getEntityById(id).getFriends().remove(friendId);
-        boolean secondRemove = getEntityById(friendId).getFriends().remove(id);
-
-        return firstRemove && secondRemove;
+        checkUserExists(id);
+        checkUserExists(friendId);
+        boolean isDeleted = friendStorage.deleteFriendRequest(id, friendId);
+        log.debug("Друг с id={} удален={} из друзей пользователя с id={}", friendId, id, isDeleted);
+        return isDeleted;
     }
 
     @Override
     public List<UserDTO> getFriends(Long id) {
         log.info("Запрос от пользователя с id={} на получение друзей", id);
-        List<UserDTO> userFriends = getEntityById(id).getFriends().stream().map(this::getById).toList();
-        log.debug("Друзья пользователя с id={} получены: {}", id, userFriends);
-        return userFriends;
+        checkUserExists(id);
+        List<UserDTO> dtos = mapper.toDto(friendStorage.getFriends(id));
+        log.debug("Друзья пользователя с id={} получены: {}", id, dtos);
+        return dtos;
     }
 
     @Override
     public List<UserDTO> getCommonFriends(Long id, Long otherId) {
         log.info("Запрос от пользователя с id={} на получение общих друзей пользователя с id={}", id, otherId);
-        Set<Long> userFriends = getEntityById(id).getFriends();
-        Set<Long> otherUserFriends = getEntityById(otherId).getFriends();
-
-        List<Long> intersections = userFriends.stream()
-                .filter(otherUserFriends::contains)
-                .toList();
-
-        if (intersections.isEmpty()) {
-            log.info("У пользователя с id={} и пользователя с id={}  Общих друзей не обнаружено", id, otherId);
-            return Collections.emptyList();
-        }
-        log.info("Общие друзья пользователя с id={} и пользователя с id={} получены: {}", id, otherId, intersections);
-        return intersections.stream().map(this::getById).toList();
+        checkUserExists(id);
+        checkUserExists(otherId);
+        List<UserDTO> commonFriends = mapper.toDto(friendStorage.getCommonFriends(id, otherId));
+        log.info("Общие друзья пользователя с id={} и пользователя с id={} получены: {}", id, otherId, commonFriends);
+        return commonFriends;
     }
 
     private User getEntityById(Long id) {
         User user = userStorage.getById(id);
-        if (user == null) {
-            throw new NotFoundException(String.format("пользователь с id=%s не найден", id));
-        }
+        user.getFriends().addAll(friendStorage.getFriends(id)
+                .stream()
+                .map(User::getId)
+                .toList());
         return user;
+    }
+
+    private void checkUserExists(Long id) {
+        userStorage.getById(id);
     }
 }
